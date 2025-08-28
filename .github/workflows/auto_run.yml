@@ -2,7 +2,7 @@ name: Run Zipper, Metal & Stock_ML (every 3 days @ 5AM BD)
 
 on:
   schedule:
-    # 5:00 AM Asia/Dhaka (UTC+6) == 23:00 UTC (previous day)
+    # 5:00 AM Asia/Dhaka (UTC+6) == 23:00 UTC (previous day UTC)
     - cron: "0 23 */3 * *"
   workflow_dispatch:
     inputs:
@@ -23,8 +23,6 @@ jobs:
 
     env:
       GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/service_account.json
-      # Optional fallback for notebooks that can rebuild the creds from env if file is missing
-      GCP_SERVICE_ACCOUNT_B64: ${{ secrets.GCP_SERVICE_ACCOUNT_B64 }}
 
     steps:
       - name: Checkout repository
@@ -44,25 +42,27 @@ jobs:
       - name: Decode GCP service account JSON
         run: |
           echo "${{ secrets.GCP_SERVICE_ACCOUNT_B64 }}" | base64 -d > service_account.json
-          test -s service_account.json || (echo "Missing/empty service_account.json" && exit 1)
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install \
-            # Core data/plot
-            pandas numpy matplotlib \
-            # Google Sheets / Drive
-            gspread gspread-dataframe \
-            google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client \
-            # Excel IO
-            openpyxl xlsxwriter \
-            # Timezone helpers
+            selenium \
+            webdriver-manager \
+            pandas \
+            gspread \
+            gspread-dataframe \
+            google-auth \
+            google-auth-oauthlib \
             pytz \
-            # Notebook execution
-            jupyter nbconvert papermill \
-            # Selenium stack
-            selenium webdriver-manager
+            openpyxl \
+            nbconvert \
+            jupyter \
+            papermill \
+            notebook \
+            pandas \
+            scikit-learn \
+            matplotlib \
 
       - name: Run Zipper.py
         if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'zipper' }}
