@@ -53,7 +53,8 @@ jobs:
             gspread-dataframe \
             google-auth \
             google-auth-oauthlib \
-            pytz
+            pytz \
+            openpyxl
 
       - name: Run Zipper.py
         if: ${{ inputs.which == 'zipper' || inputs.which == 'both' || github.event_name == 'schedule' }}
