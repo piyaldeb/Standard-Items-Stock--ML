@@ -54,7 +54,10 @@ jobs:
             google-auth \
             google-auth-oauthlib \
             pytz \
-            openpyxl
+            openpyxl \
+            nbconvert \
+            jupyter \
+            papermill
 
       - name: Run Zipper.py
         if: ${{ inputs.which == 'zipper' || inputs.which == 'both' || github.event_name == 'schedule' }}
@@ -67,3 +70,8 @@ jobs:
         run: |
           echo "Running Metal.py..."
           python Metal.py
+
+      - name: Run Standard Stock_ML.ipynb
+        run: |
+          echo "Running Standard Stock_ML.ipynb..."
+          jupyter nbconvert --to notebook --execute "Standard Stock_ML.ipynb" --output "Standard Stock_ML-output.ipynb"
