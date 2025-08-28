@@ -54,7 +54,7 @@ while True:  # Infinite loop until the file is downloaded
 
         log.info("Navigating to login page...")
         driver.get("https://taps.odoo.com")
-        wait.until(EC.presence_of_element_located((By.NAME, "login"))).send_keys("sranak@texzipperbd.com")
+        wait.until(EC.presence_of_element_located((By.NAME, "login"))).send_keys("ranak@texzipperbd.com")
         driver.find_element(By.NAME, "password").send_keys("2326")
         driver.find_element(By.XPATH, "//button[contains(text(), 'Log in')]").click()
         time.sleep(2)
