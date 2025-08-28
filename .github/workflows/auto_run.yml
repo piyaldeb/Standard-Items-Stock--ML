@@ -1,4 +1,4 @@
-name: Run Zipper & Metal (every 3 days @ 5AM BD)
+name: Run Zipper, Metal & Stock_ML (every 3 days @ 5AM BD)
 
 on:
   schedule:
@@ -7,14 +7,15 @@ on:
   workflow_dispatch:
     inputs:
       which:
-        description: "Which script to run?"
+        description: "Which job to run?"
         required: true
-        default: "both"
+        default: "all"
         type: choice
         options:
-          - both
+          - all
           - zipper
           - metal
+          - stock_ml
 
 jobs:
   run:
@@ -60,18 +61,27 @@ jobs:
             papermill
 
       - name: Run Zipper.py
-        if: ${{ inputs.which == 'zipper' || inputs.which == 'both' || github.event_name == 'schedule' }}
+        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'zipper' }}
         run: |
           echo "Running Zipper.py..."
           python Zipper.py
 
       - name: Run Metal.py
-        if: ${{ inputs.which == 'metal' || inputs.which == 'both' || github.event_name == 'schedule' }}
+        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'metal' }}
         run: |
           echo "Running Metal.py..."
           python Metal.py
 
-      - name: Run Standard Stock_ML.ipynb
+      - name: Run Standard_Stock_ML.ipynb
+        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'stock_ml' }}
         run: |
-          echo "Running Standard Stock_ML.ipynb..."
-          jupyter nbconvert --to notebook --execute "Standard Stock_ML.ipynb" --output "Standard Stock_ML-output.ipynb"
+          echo "Running Standard_Stock_ML.ipynb..."
+          jupyter nbconvert --to notebook --execute "Standard_Stock_ML.ipynb" \
+            --output "Standard_Stock_ML-output.ipynb"
+
+      - name: Upload executed notebook (artifact)
+        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'stock_ml' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: Standard_Stock_ML-output
+          path: Standard_Stock_ML-output.ipynb
