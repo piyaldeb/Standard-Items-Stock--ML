@@ -157,7 +157,7 @@ try:
     client = gspread.authorize(creds)
 
     sheet = client.open_by_key("1tSgmESOWqYRkDk_KhewnaaJmQGSUaSILzOzpade9tRc")
-    worksheet = sheet.worksheet("test")
+    worksheet = sheet.worksheet("Metal")
 
     if df.empty:
         print("Skip: DataFrame is empty, not pasting to sheet.")
