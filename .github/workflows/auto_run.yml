@@ -3,7 +3,7 @@ name: Run Zipper, Metal & Stock_ML (every 3 days @ 5AM BD)
 on:
   schedule:
     # 5:00 AM Asia/Dhaka (UTC+6) == 23:00 UTC (previous day UTC)
-    - cron: "0 23 */3 * *"
+    - cron: "0 5 * * *"
   workflow_dispatch:
     inputs:
       which:
