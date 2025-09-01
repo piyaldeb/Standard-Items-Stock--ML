@@ -117,9 +117,10 @@ def compute_forecast(company_id, wizard_id):
     log.info(f"⚡ Forecast computed for wizard {wizard_id} (company {company_id})")
     return r.json()
 
-# ========= FETCH OPENING/CLOSING ========== 
+# ========= FETCH OPENING/CLOSING WITH LABELS ==========
 def fetch_opening_closing(company_id, cname):
     context = {"allowed_company_ids": [company_id], "company_id": company_id}
+    
     payload = {
         "jsonrpc": "2.0",
         "method": "call",
@@ -129,27 +130,27 @@ def fetch_opening_closing(company_id, cname):
             "args": [],
             "kwargs": {
                 "specification": {
-                    "product_id": {"fields": {"display_name": {}}},        # Product
-                    "product_category": {"fields": {"display_name": {}}},  # Category
-                    "parent_category": {"fields": {"display_name": {}}},   # Item
+                    "parent_category": {"fields": {"display_name": {}}},  # Product
+                    "product_category": {"fields": {"display_name": {}}}, # Category
+                    "product_id": {"fields": {"display_name": {}}},       # Item
                     "pr_code": {},                                         # Item Code
-                    "lot_id": {"fields": {"display_name": {}}},            # Invoice
-                    "receive_date": {},                                     # Receive Date
-                    "pur_price": {},                                        # Pur Price
-                    "landed_cost": {},                                      # Landed Cost
-                    "lot_price": {},                                        # Price
-                    "product_uom": {"fields": {"display_name": {}}},       # Unit
-                    "opening_qty": {},                                      # Opening Quantity
-                    "opening_value": {},                                    # Opening Value
-                    "receive_qty": {},                                      # Receive Quantity
-                    "receive_value": {},                                    # Receive Value
-                    "issue_qty": {},                                        # Issue Quantity
-                    "issue_value": {},                                      # Issue Value
-                    "cloing_qty": {},                                       # Closing Quantity
-                    "cloing_value": {},                                     # Closing Value
-                    "po_type": {},                                          # Po Type
-                    "rejected": {},                                         # Rejected
-                    "shipment_mode": {},                                    # Shipment Mode
+                    "lot_id": {"fields": {"display_name": {}}},           # Invoice
+                    "receive_date": {},                                    # Receive Date
+                    "pur_price": {},                                       # Pur Price
+                    "landed_cost": {},                                     # Landed Cost
+                    "lot_price": {},                                       # Price
+                    "product_uom": {"fields": {"display_name": {}}},      # Unit
+                    "opening_qty": {},                                     # Opening Quantity
+                    "opening_value": {},                                   # Opening Value
+                    "receive_qty": {},                                     # Receive Quantity
+                    "receive_value": {},                                   # Receive Value
+                    "issue_qty": {},                                       # Issue Quantity
+                    "issue_value": {},                                     # Issue Value
+                    "cloing_qty": {},                                      # Closing Quantity
+                    "cloing_value": {},                                    # Closing Value
+                    "po_type": {},                                         # Po Type
+                    "rejected": {},                                        # Rejected
+                    "shipment_mode": {},                                   # Shipment Mode
                 },
                 "offset": 0,
                 "limit": 5000,
@@ -164,10 +165,10 @@ def fetch_opening_closing(company_id, cname):
     r.raise_for_status()
 
     try:
-        data = r.json()["result"]["records"]
+        records = r.json()["result"]["records"]
 
         # Flatten nested dicts → keep only display_name
-        def flatten_record(record):
+        def flatten(record):
             flat = {}
             for k, v in record.items():
                 if isinstance(v, dict) and "display_name" in v:
@@ -176,13 +177,50 @@ def fetch_opening_closing(company_id, cname):
                     flat[k] = v
             return flat
 
-        flattened = [flatten_record(rec) for rec in data]
-        log.info(f"📊 {cname}: {len(flattened)} rows fetched (flattened)")
-        return pd.DataFrame(flattened)
+        flattened = [flatten(rec) for rec in records]
 
-    except Exception:
-        log.error(f"❌ {cname}: Failed to parse report: {r.text[:200]}")
+        # Convert to DataFrame
+        df = pd.DataFrame(flattened)
+
+        # Drop unwanted 'id' column if exists
+        if "id" in df.columns:
+            df.drop(columns=["id"], inplace=True)
+
+        # Map internal fields to human-readable labels
+        FIELD_LABELS = {
+            "parent_category": "Product",
+            "product_category": "Category",
+            "product_id": "Item",
+            "pr_code": "Item Code",
+            "lot_id": "Invoice",
+            "receive_date": "Receive Date",
+            "pur_price": "Pur Price",
+            "landed_cost": "Landed Cost",
+            "lot_price": "Price",
+            "product_uom": "Unit",
+            "opening_qty": "Opening Quantity",
+            "opening_value": "Opening Value",
+            "receive_qty": "Receive Quantity",
+            "receive_value": "Receive Value",
+            "issue_qty": "Issue Quantity",
+            "issue_value": "Issue Value",
+            "cloing_qty": "Closing Quantity",
+            "cloing_value": "Closing Value",
+            "po_type": "Po Type",
+            "rejected": "Rejected",
+            "shipment_mode": "Shipment Mode",
+        }
+
+        df.rename(columns=FIELD_LABELS, inplace=True)
+
+        log.info(f"📊 {cname}: {len(df)} rows fetched with labels")
+        return df
+
+    except Exception as e:
+        log.error(f"❌ {cname}: Failed to parse report: {r.text[:200]} | Error: {e}")
         return pd.DataFrame()
+
+
 
 
 
