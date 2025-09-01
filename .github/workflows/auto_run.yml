@@ -1,9 +1,9 @@
-name: Run Zipper, Metal & Stock_ML (every 3 days @ 5AM BD)
+name: Run Mt_Zip_db & Standard_Stock_ML (every 3 days @ 5AM BD)
 
 on:
   schedule:
-    # 5:00 AM Asia/Dhaka (UTC+6) == 23:00 UTC (previous day UTC)
-    - cron: "0 5 * * *"
+    # Every 3 days at 5:00 AM Asia/Dhaka (UTC+6) == 23:00 UTC (previous day)
+    - cron: "0 23 */3 * *"
   workflow_dispatch:
     inputs:
       which:
@@ -13,8 +13,7 @@ on:
         type: choice
         options:
           - all
-          - zipper
-          - metal
+          - mt_zip
           - stock_ml
 
 jobs:
@@ -33,16 +32,6 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install Chrome (for Selenium)
-        uses: browser-actions/setup-chrome@v1
-
-      - name: Show Chrome version
-        run: chrome --version || google-chrome --version || true
-
-      - name: Decode GCP service account JSON
-        run: |
-          echo "${{ secrets.GCP_SERVICE_ACCOUNT_B64 }}" | base64 -d > service_account.json
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -54,32 +43,35 @@ jobs:
             gspread-dataframe \
             google-auth \
             google-auth-oauthlib \
+            python-dotenv \
             pytz \
             openpyxl \
             nbconvert \
             jupyter \
             papermill \
             notebook \
-            pandas \
             scikit-learn \
-            matplotlib \
+            matplotlib
 
-      - name: Run Zipper.py
-        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'zipper' }}
+      - name: Create .env file from GitHub Secrets
         run: |
-          echo "Running Zipper.py..."
-          python Zipper.py
+          echo "ODOO_URL=${{ secrets.ODOO_URL }}" >> .env
+          echo "ODOO_DB=${{ secrets.ODOO_DB }}" >> .env
+          echo "ODOO_USERNAME=${{ secrets.ODOO_USERNAME }}" >> .env
+          echo "ODOO_PASSWORD=${{ secrets.ODOO_PASSWORD }}" >> .env
 
-      - name: Run Metal.py
-        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'metal' }}
+      - name: Run Mt_Zip_db.py
+        if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'mt_zip' }}
         run: |
-          echo "Running Metal.py..."
-          python Metal.py
+          echo "Running Mt_Zip_db.py..."
+          export $(grep -v '^#' .env | xargs)
+          python Mt_Zip_db.py
 
       - name: Run Standard_Stock_ML.ipynb
         if: ${{ github.event_name == 'schedule' || inputs.which == 'all' || inputs.which == 'stock_ml' }}
         run: |
           echo "Running Standard_Stock_ML.ipynb..."
+          export $(grep -v '^#' .env | xargs)
           jupyter nbconvert --to notebook --execute "Standard_Stock_ML.ipynb" \
             --output "Standard_Stock_ML-output.ipynb"
 
