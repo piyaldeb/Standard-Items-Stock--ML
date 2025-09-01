@@ -117,7 +117,7 @@ def compute_forecast(company_id, wizard_id):
     log.info(f"⚡ Forecast computed for wizard {wizard_id} (company {company_id})")
     return r.json()
 
-# ========= FETCH OPENING/CLOSING ==========
+# ========= FETCH OPENING/CLOSING ========== 
 def fetch_opening_closing(company_id, cname):
     context = {"allowed_company_ids": [company_id], "company_id": company_id}
     payload = {
@@ -159,11 +159,24 @@ def fetch_opening_closing(company_id, cname):
     r.raise_for_status()
     try:
         data = r.json()["result"]["records"]
-        log.info(f"📊 {cname}: {len(data)} rows fetched")
-        return pd.DataFrame(data)
+
+        # Flatten nested dicts → keep only display_name
+        def flatten_record(record):
+            flat = {}
+            for k, v in record.items():
+                if isinstance(v, dict) and "display_name" in v:
+                    flat[k] = v["display_name"]
+                else:
+                    flat[k] = v
+            return flat
+
+        flattened = [flatten_record(rec) for rec in data]
+        log.info(f"📊 {cname}: {len(flattened)} rows fetched (flattened)")
+        return pd.DataFrame(flattened)
     except Exception:
-        log.error(f"❌ Failed to fetch {cname}: {r.text[:200]}")
+        log.error(f"❌ {cname}: Failed to parse report: {r.text[:200]}")
         return pd.DataFrame()
+
 
 # ========= PASTE TO GOOGLE SHEETS ==========
 def paste_to_google_sheet(df, sheet_key, worksheet_name):
@@ -179,7 +192,9 @@ def paste_to_google_sheet(df, sheet_key, worksheet_name):
     set_with_dataframe(worksheet, df)
     tz = pytz.timezone("Asia/Dhaka")
     timestamp = datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
-    worksheet.update("AA2", [[timestamp]])
+    # Write timestamp in last column safely
+    last_col = chr(65 + min(25, df.shape[1]))  # A-Z, max 26 columns
+    worksheet.update(f"{last_col}2", [[timestamp]])
     log.info(f"✅ Data pasted to {worksheet_name} & timestamp updated: {timestamp}")
 
 # ========= MAIN SYNC ==========
@@ -196,7 +211,7 @@ if __name__ == "__main__":
                 df.to_excel(local_file, index=False)
                 log.info(f"📂 Saved locally: {local_file}")
 
-                # Worksheet name based on company ID
+                # Worksheet name based on company
                 worksheet_name = "Zipper" if cid == 1 else "Metal" if cid == 3 else cname
 
                 # Paste to Google Sheets
