@@ -129,23 +129,27 @@ def fetch_opening_closing(company_id, cname):
             "args": [],
             "kwargs": {
                 "specification": {
-                    "product_id": {"fields": {"display_name": {}}},
-                    "product_category": {"fields": {"display_name": {}}},
-                    "parent_category": {"fields": {"display_name": {}}},
-                    "classification_id": {"fields": {"display_name": {}}},
-                    "product_type": {"fields": {"display_name": {}}},
-                    "item_category": {"fields": {"display_name": {}}},
-                    "pr_code": {},
-                    "product_uom": {"fields": {"display_name": {}}},
-                    "lot_id": {"fields": {"display_name": {}}},
-                    "opening_qty": {},
-                    "opening_value": {},
-                    "receive_qty": {},
-                    "receive_value": {},
-                    "issue_qty": {},
-                    "issue_value": {},
-                    "cloing_qty": {},
-                    "cloing_value": {},
+                    "product_id": {"fields": {"display_name": {}}},        # Product
+                    "product_category": {"fields": {"display_name": {}}},  # Category
+                    "parent_category": {"fields": {"display_name": {}}},   # Item
+                    "pr_code": {},                                         # Item Code
+                    "lot_id": {"fields": {"display_name": {}}},            # Invoice
+                    "receive_date": {},                                     # Receive Date
+                    "pur_price": {},                                        # Pur Price
+                    "landed_cost": {},                                      # Landed Cost
+                    "lot_price": {},                                        # Price
+                    "product_uom": {"fields": {"display_name": {}}},       # Unit
+                    "opening_qty": {},                                      # Opening Quantity
+                    "opening_value": {},                                    # Opening Value
+                    "receive_qty": {},                                      # Receive Quantity
+                    "receive_value": {},                                    # Receive Value
+                    "issue_qty": {},                                        # Issue Quantity
+                    "issue_value": {},                                      # Issue Value
+                    "cloing_qty": {},                                       # Closing Quantity
+                    "cloing_value": {},                                     # Closing Value
+                    "po_type": {},                                          # Po Type
+                    "rejected": {},                                         # Rejected
+                    "shipment_mode": {},                                    # Shipment Mode
                 },
                 "offset": 0,
                 "limit": 5000,
@@ -155,8 +159,10 @@ def fetch_opening_closing(company_id, cname):
             },
         },
     }
+
     r = session.post(f"{ODOO_URL}/web/dataset/call_kw", json=payload)
     r.raise_for_status()
+
     try:
         data = r.json()["result"]["records"]
 
@@ -173,9 +179,11 @@ def fetch_opening_closing(company_id, cname):
         flattened = [flatten_record(rec) for rec in data]
         log.info(f"📊 {cname}: {len(flattened)} rows fetched (flattened)")
         return pd.DataFrame(flattened)
+
     except Exception:
         log.error(f"❌ {cname}: Failed to parse report: {r.text[:200]}")
         return pd.DataFrame()
+
 
 
 # ========= PASTE TO GOOGLE SHEETS ==========
